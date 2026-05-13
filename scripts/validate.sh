@@ -52,6 +52,18 @@ done
 
 cd "$ROOT_DIR"
 
+PYTHON_BIN="${PYTHON:-}"
+if [[ -z "$PYTHON_BIN" ]]; then
+  if command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  elif command -v python >/dev/null 2>&1; then
+    PYTHON_BIN="python"
+  else
+    echo "ERROR: neither python3 nor python is available" >&2
+    exit 1
+  fi
+fi
+
 section() {
   printf '\n==> %s\n' "$1"
 }
@@ -80,7 +92,10 @@ else
 fi
 
 section "Shell syntax"
-mapfile -t shell_scripts < <(find scripts -type f -name '*.sh' | sort)
+shell_scripts=()
+while IFS= read -r path; do
+  shell_scripts+=("$path")
+done < <(find scripts -type f -name '*.sh' | sort)
 if [[ "${#shell_scripts[@]}" -eq 0 ]]; then
   warn_or_fail "no shell scripts found under scripts/"
 else
@@ -88,37 +103,46 @@ else
 fi
 
 section "Python compile"
-mapfile -t python_compile_paths < <(existing_paths src tests)
+python_compile_paths=()
+while IFS= read -r path; do
+  python_compile_paths+=("$path")
+done < <(existing_paths src tests)
 if [[ "${#python_compile_paths[@]}" -eq 0 ]]; then
   warn_or_fail "neither src/ nor tests/ exists for compileall"
 else
-  python -m compileall "${python_compile_paths[@]}"
+  "$PYTHON_BIN" -m compileall "${python_compile_paths[@]}"
 fi
 
 section "Python tests"
 if [[ -d tests ]]; then
-  if python -c 'import pytest' >/dev/null 2>&1; then
-    python -m pytest
+  if "$PYTHON_BIN" -c 'import pytest' >/dev/null 2>&1; then
+    "$PYTHON_BIN" -m pytest
   else
     echo "pytest is not installed; falling back to unittest discovery"
-    python -m unittest discover -s tests
+    "$PYTHON_BIN" -m unittest discover -s tests
   fi
 else
   warn_or_fail "tests/ does not exist"
 fi
 
 section "Python lint"
-mapfile -t python_lint_paths < <(existing_paths src tests)
+python_lint_paths=()
+while IFS= read -r path; do
+  python_lint_paths+=("$path")
+done < <(existing_paths src tests)
 if [[ "${#python_lint_paths[@]}" -eq 0 ]]; then
   warn_or_fail "neither src/ nor tests/ exists for Python lint"
-elif python -m ruff --version >/dev/null 2>&1; then
-  python -m ruff check "${python_lint_paths[@]}"
+elif "$PYTHON_BIN" -m ruff --version >/dev/null 2>&1; then
+  "$PYTHON_BIN" -m ruff check "${python_lint_paths[@]}"
 else
   echo "ruff is not installed; compileall already provided Python syntax coverage"
 fi
 
 section "Terraform formatting"
-mapfile -t terraform_paths < <(existing_paths examples infra)
+terraform_paths=()
+while IFS= read -r path; do
+  terraform_paths+=("$path")
+done < <(existing_paths examples infra)
 if [[ "${#terraform_paths[@]}" -eq 0 ]]; then
   warn_or_fail "neither examples/ nor infra/ exists for terraform fmt"
 elif command -v terraform >/dev/null 2>&1; then
@@ -129,8 +153,14 @@ fi
 
 section "GitHub Actions lint"
 if [[ -d .github/workflows ]]; then
-  if command -v actionlint >/dev/null 2>&1; then
-    actionlint .github/workflows/*.yml .github/workflows/*.yaml
+  workflow_files=()
+  while IFS= read -r path; do
+    workflow_files+=("$path")
+  done < <(find .github/workflows -maxdepth 1 -type f \( -name '*.yml' -o -name '*.yaml' \) | sort)
+  if [[ "${#workflow_files[@]}" -eq 0 ]]; then
+    warn_or_fail ".github/workflows exists but contains no YAML workflows"
+  elif command -v actionlint >/dev/null 2>&1; then
+    actionlint "${workflow_files[@]}"
   else
     echo "actionlint is not installed; skipping workflow lint"
   fi
