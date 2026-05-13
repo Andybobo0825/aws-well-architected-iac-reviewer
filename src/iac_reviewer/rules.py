@@ -92,7 +92,7 @@ def _check_observability_and_tags(resources: tuple[TerraformResource, ...]) -> l
     if resources and not any(resource.type == "aws_cloudwatch_metric_alarm" for resource in resources):
         findings.append(_global_finding("OPS-CW-ALARMS", "Operational Excellence", "medium", "CloudWatch alarm missing", "No aws_cloudwatch_metric_alarm resource was found.", "Add alarms for critical health, latency, error, and cost signals."))
     for resource in resources:
-        if resource.type.startswith("aws_") and resource.type not in {"aws_iam_policy_document"} and not re.search(r'\btags\s*=\s*\{', resource.body):
+        if resource.type.startswith("aws_") and resource.type not in {"aws_iam_policy_document"} and not re.search(r'\btags\s*=\s*(?:\{|\[)', resource.body):
             findings.append(_finding("OPS-TAGS", "Operational Excellence", "low", "AWS resource missing tags", "AWS resource has no tags block for ownership, environment, or cost allocation.", resource, "Add common tags such as Project, Environment, Owner, and ManagedBy."))
     return findings
 

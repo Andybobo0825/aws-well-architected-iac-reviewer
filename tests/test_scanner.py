@@ -1,20 +1,26 @@
 from __future__ import annotations
 
+import tempfile
+import unittest
 from pathlib import Path
 
+import _support  # noqa: F401
 from iac_reviewer.scanner import scan_paths
 
 
-def write_tf(tmp_path: Path, content: str) -> Path:
-    path = tmp_path / "main.tf"
+def write_tf(directory: Path, content: str) -> Path:
+    path = directory / "main.tf"
     path.write_text(content, encoding="utf-8")
     return path
 
 
-def test_detects_required_well_architected_findings(tmp_path: Path) -> None:
-    tf_file = write_tf(
-        tmp_path,
-        '''
+class ScannerTests(unittest.TestCase):
+    def test_detects_required_well_architected_findings(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            tmp_path = Path(raw_dir)
+            tf_file = write_tf(
+                tmp_path,
+                '''
 resource "aws_s3_bucket" "public" {
   bucket = "demo-public"
   acl    = "public-read"
@@ -39,28 +45,29 @@ resource "aws_instance" "big" {
   instance_type = "m5.24xlarge"
 }
 ''',
-    )
+            )
 
-    result = scan_paths([tf_file])
+            result = scan_paths([tf_file])
 
-    rule_ids = {finding.rule_id for finding in result.findings}
-    assert "SEC-S3-PUBLIC" in rule_ids
-    assert "SEC-SG-PUBLIC-INGRESS" in rule_ids
-    assert "REL-RDS-BACKUP" in rule_ids
-    assert "REL-RDS-MULTIAZ" in rule_ids
-    assert "OPS-CW-LOGS" in rule_ids
-    assert "OPS-CW-ALARMS" in rule_ids
-    assert "OPS-TAGS" in rule_ids
-    assert "COST-EC2-OVERSIZED" in rule_ids
-    assert "COST-BUDGET" in rule_ids
-    assert "PERF-SCALING" in rule_ids
-    assert "PERF-CACHE" in rule_ids
+        rule_ids = {finding.rule_id for finding in result.findings}
+        self.assertIn("SEC-S3-PUBLIC", rule_ids)
+        self.assertIn("SEC-SG-PUBLIC-INGRESS", rule_ids)
+        self.assertIn("REL-RDS-BACKUP", rule_ids)
+        self.assertIn("REL-RDS-MULTIAZ", rule_ids)
+        self.assertIn("OPS-CW-LOGS", rule_ids)
+        self.assertIn("OPS-CW-ALARMS", rule_ids)
+        self.assertIn("OPS-TAGS", rule_ids)
+        self.assertIn("COST-EC2-OVERSIZED", rule_ids)
+        self.assertIn("COST-BUDGET", rule_ids)
+        self.assertIn("PERF-SCALING", rule_ids)
+        self.assertIn("PERF-CACHE", rule_ids)
 
-
-def test_secure_fixture_has_no_findings(tmp_path: Path) -> None:
-    tf_file = write_tf(
-        tmp_path,
-        '''
+    def test_secure_fixture_has_no_findings(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            tmp_path = Path(raw_dir)
+            tf_file = write_tf(
+                tmp_path,
+                '''
 resource "aws_s3_bucket" "private" {
   bucket = "demo-private"
   tags = { Project = "iac-reviewer" }
@@ -135,19 +142,24 @@ resource "aws_elasticache_cluster" "cache" {
   tags = { Project = "iac-reviewer" }
 }
 ''',
-    )
+            )
 
-    result = scan_paths([tf_file])
+            result = scan_paths([tf_file])
 
-    assert result.findings == ()
+        self.assertEqual((), result.findings)
+
+    def test_discovers_nested_terraform_files(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_dir:
+            tmp_path = Path(raw_dir)
+            nested = tmp_path / "examples" / "terraform"
+            nested.mkdir(parents=True)
+            (nested / "main.tf").write_text('resource "aws_budgets_budget" "monthly" { tags = { Project = "x" } }', encoding="utf-8")
+            (nested / "notes.txt").write_text("ignored", encoding="utf-8")
+
+            result = scan_paths([tmp_path])
+
+        self.assertEqual((nested / "main.tf",), result.scanned_files)
 
 
-def test_discovers_nested_terraform_files(tmp_path: Path) -> None:
-    nested = tmp_path / "examples" / "terraform"
-    nested.mkdir(parents=True)
-    (nested / "main.tf").write_text('resource "aws_budgets_budget" "monthly" { tags = { Project = "x" } }', encoding="utf-8")
-    (nested / "notes.txt").write_text("ignored", encoding="utf-8")
-
-    result = scan_paths([tmp_path])
-
-    assert result.scanned_files == (nested / "main.tf",)
+if __name__ == "__main__":
+    unittest.main()
