@@ -51,7 +51,6 @@ architecture-review.md
 3. **Intake**: file content and lightweight resource signals are normalized for rule evaluation.
 4. **Rule evaluation**: each rule emits zero or more findings with severity, pillar, evidence, and remediation text.
 5. **Report rendering**: findings are grouped by pillar and written to `architecture-review.md`.
-6. **CI publication**: GitHub Actions can upload the Markdown report as a pull-request artifact.
 
 ## Rule model
 
@@ -68,9 +67,8 @@ A finding should contain enough context for architecture discussion:
 
 ## Safety model
 
-The reviewer treats Terraform as source text and does not evaluate live cloud state. This keeps local and CI runs safe for portfolio usage, forks, and pull requests from contributors.
+The reviewer treats Terraform as source text and does not evaluate live cloud state. This keeps local runs safe for portfolio usage and interview demonstrations.
 
-CI should not expose AWS secrets to this workflow. The default workflow intentionally avoids credential configuration and avoids Terraform commands that contact providers.
 
 ## Extensibility
 

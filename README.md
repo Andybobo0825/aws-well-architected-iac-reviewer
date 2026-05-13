@@ -6,14 +6,14 @@
 
 ## 專案目的
 
-雲端架構審查常常發生在 Terraform 已經接近上線時，導致安全性、可靠性或成本風險太晚才被發現。本專案把一部分 AWS Well-Architected 的審查問題轉成自動化 Pull Request 回饋，讓常見風險能在更早的 IaC review 階段被看見。
+雲端架構審查常常發生在 Terraform 已經接近上線時，導致安全性、可靠性或成本風險太晚才被發現。本專案把一部分 AWS Well-Architected 的審查問題轉成本機可執行的架構檢查，讓常見風險能在更早的 IaC review 階段被看見。
 
 這個專案展示：
 
 - 以 AWS Well-Architected 五大支柱進行架構審查的思維。
 - 不依賴雲端 API、無副作用的 Terraform 靜態分析能力。
-- 可放進 GitHub Pull Request 討論的 Markdown 審查報告。
-- 適合 Cloud Solution Architect / DevOps Engineer 作品集的 CI 自動化流程。
+- 可作為面試與作品集討論材料的 Markdown 審查報告。
+- 適合 Cloud Solution Architect / DevOps Engineer 作品集的架構審查展示。
 
 ## 審查範圍
 
@@ -37,8 +37,7 @@
 ├── docs/ARCHITECTURE.md          # 系統設計與資料流
 ├── docs/RULES.md                 # 規則目錄與 fixture 對應
 ├── docs/ROADMAP_ALIGNMENT.md     # 作品集 roadmap 對應說明
-├── infra/terraform-intake.md     # Terraform 審查 intake 模板
-└── .github/workflows/iac-review.yml
+└── infra/terraform-intake.md     # Terraform 審查 intake 模板
 ```
 
 ## 快速開始
@@ -68,18 +67,6 @@ terraform fmt -check -recursive examples infra
 ./scripts/validate.sh
 ```
 
-## GitHub Actions 流程
-
-本專案包含 Pull Request 與 push 觸發的 GitHub Actions workflow，設計目標是讓 IaC review 能自動化執行：
-
-1. 設定 Python 環境。
-2. 在 dependency 檔案存在時安裝專案與測試依賴。
-3. 編譯 Python source 與 tests。
-4. 有測試時執行 pytest；本機腳本則提供 unittest fallback。
-5. 在 Terraform CLI 與 `.tf` 檔案存在時執行格式檢查。
-6. 使用 reviewer 掃描 Terraform 範例。
-7. 產出並上傳 `architecture-review.md` 作為 workflow artifact。
-
 ## 安全邊界
 
 - 只做靜態檔案掃描。
@@ -100,4 +87,4 @@ terraform fmt -check -recursive examples infra
 
 ## Roadmap 對應
 
-本 repo 對應作品集 roadmap 第二個專案：「AWS Well-Architected IaC Reviewer」。它展示如何把 AWS 架構最佳實踐轉成 Terraform 自動化審查規則，並在 PR 階段產生可討論的 Markdown 架構審查報告。
+本 repo 對應作品集 roadmap 第二個專案：「AWS Well-Architected IaC Reviewer」。它展示如何把 AWS 架構最佳實踐轉成 Terraform 自動化審查規則，並產生可討論的 Markdown 架構審查報告。

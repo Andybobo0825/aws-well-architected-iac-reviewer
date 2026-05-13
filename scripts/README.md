@@ -1,24 +1,17 @@
 # Validation Scripts
 
-`scripts/validate.sh` is the single local/CI validation entry point for this
-portfolio repository. It performs only static checks and never uses AWS
-credentials or `terraform apply`.
+`scripts/validate.sh` is the local validation entry point for this portfolio repository. It performs only static checks and never uses AWS credentials, `terraform plan`, or `terraform apply`.
 
-Recommended CI invocation:
+Recommended local invocation:
 
 ```bash
-CI=true scripts/validate.sh --strict
+scripts/validate.sh
 ```
 
-Useful local bootstrap invocation while parallel workers are still creating the
-repo structure:
+Strict local validation, useful before publishing changes:
 
 ```bash
-scripts/validate.sh --no-strict
+scripts/validate.sh --strict
 ```
 
-The script runs Python compile/tests/lint, Terraform formatting when Terraform
-is installed, shell syntax checks, and optional GitHub Actions linting when
-`actionlint` is available. In strict mode it also requires the expected project
-paths `src/`, `tests/`, and `examples/terraform/` to exist so CI does not pass
-an incomplete repository by accident.
+The script runs shell syntax checks, Python compile/tests/lint when available, and Terraform formatting when Terraform is installed. In strict mode it also requires the expected project paths `src/`, `tests/`, and `examples/terraform/` to exist so incomplete scaffolds are caught early.

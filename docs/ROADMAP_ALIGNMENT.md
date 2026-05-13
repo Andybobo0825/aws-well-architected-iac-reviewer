@@ -9,7 +9,6 @@ This repository implements project 2 from the Cloud Solution Architect / DevOps 
 | Scan Terraform projects | Python CLI scans Terraform fixture or project paths |
 | Check common architecture risks | Rule families cover Security, Reliability, Operational Excellence, Cost Optimization, and Performance Efficiency |
 | Produce Markdown report | Reviewer writes `architecture-review.md` |
-| Integrate with GitHub Actions | `.github/workflows/iac-review.yml` runs checks and uploads report artifacts |
 | Support interview discussion | Docs explain architecture, constraints, rule families, and review tradeoffs |
 
 ## Portfolio message
@@ -18,13 +17,13 @@ The project shows how AWS architecture principles can be translated into automat
 
 Suggested interview summary:
 
-> I converted a focused subset of AWS Well-Architected review questions into a Terraform static reviewer. It runs locally or in GitHub Actions, flags common security, reliability, operational, cost, and performance risks, and produces a Markdown architecture review that can be discussed during pull requests.
+> I converted a focused subset of AWS Well-Architected review questions into a Terraform static reviewer. It runs locally, flags common security, reliability, operational, cost, and performance risks, and produces a Markdown architecture review for portfolio and interview discussion.
 
 ## Scope decisions
 
 - **Terraform first**: the roadmap allows Terraform or CloudFormation; this repository starts with Terraform to keep implementation and fixtures focused.
 - **Static review**: no AWS credentials or live account access are needed, which makes the project safe for public portfolio review.
-- **Markdown report**: `architecture-review.md` is human-readable and easy to attach to pull requests.
+- **Markdown report**: `architecture-review.md` is human-readable and easy to review during portfolio walkthroughs.
 - **Transparent rules**: rule IDs and recommendations should remain understandable to both engineers and architects.
 
 ## Future extensions
