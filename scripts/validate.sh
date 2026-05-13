@@ -91,6 +91,15 @@ else
   echo "strict=false"
 fi
 
+section "Expected project paths"
+for expected_path in src tests examples/terraform; do
+  if [[ -e "$expected_path" ]]; then
+    echo "found: $expected_path"
+  else
+    warn_or_fail "expected path $expected_path is missing"
+  fi
+done
+
 section "Shell syntax"
 shell_scripts=()
 while IFS= read -r path; do

@@ -19,4 +19,6 @@ scripts/validate.sh --no-strict
 
 The script runs Python compile/tests/lint, Terraform formatting when Terraform
 is installed, shell syntax checks, and optional GitHub Actions linting when
-`actionlint` is available.
+`actionlint` is available. In strict mode it also requires the expected project
+paths `src/`, `tests/`, and `examples/terraform/` to exist so CI does not pass
+an incomplete repository by accident.
