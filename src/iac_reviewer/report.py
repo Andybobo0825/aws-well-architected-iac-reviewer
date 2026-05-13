@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 from .models import Finding, ScanResult
 
@@ -20,7 +20,7 @@ SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 def render_markdown(result: ScanResult) -> str:
     """Render a deterministic architecture-review.md report."""
 
-    generated_at = datetime.now(UTC).replace(microsecond=0).isoformat()
+    generated_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     lines = [
         "# AWS Well-Architected IaC Review",
         "",
