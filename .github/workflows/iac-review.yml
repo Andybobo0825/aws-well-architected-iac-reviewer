@@ -1,0 +1,109 @@
+name: IaC Well-Architected Review
+
+on:
+  pull_request:
+    paths:
+      - "**/*.tf"
+      - "src/**"
+      - "tests/**"
+      - "docs/**"
+      - ".github/workflows/iac-review.yml"
+      - "pyproject.toml"
+      - "requirements*.txt"
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  review:
+    name: Static IaC review
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          if [ -f pyproject.toml ]; then
+            python -m pip install -e ".[test]" || python -m pip install -e .
+          elif [ -f requirements.txt ]; then
+            python -m pip install -r requirements.txt
+          fi
+          python -m pip install pytest
+
+      - name: Compile Python sources
+        run: |
+          set -euo pipefail
+          targets=()
+          [ -d src ] && targets+=(src)
+          [ -d tests ] && targets+=(tests)
+          if [ ${#targets[@]} -eq 0 ]; then
+            echo "No src/ or tests/ directory present yet; skipping compile step."
+          else
+            python -m compileall "${targets[@]}"
+          fi
+
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          if [ -d tests ]; then
+            python -m pytest
+          else
+            echo "No tests/ directory present yet; skipping pytest."
+          fi
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Check Terraform formatting
+        run: |
+          set -euo pipefail
+          targets=()
+          [ -d examples ] && targets+=(examples)
+          [ -d infra ] && targets+=(infra)
+          if [ ${#targets[@]} -eq 0 ]; then
+            echo "No Terraform fixture directories present; skipping terraform fmt check."
+          else
+            terraform fmt -check -recursive "${targets[@]}"
+          fi
+
+      - name: Generate architecture review report
+        run: |
+          set -euo pipefail
+          if [ -d src/iac_reviewer ] && [ -d examples/terraform ]; then
+            python -m iac_reviewer examples/terraform --output architecture-review.md
+          else
+            cat > architecture-review.md <<'REPORT'
+          # Architecture Review
+
+          The reviewer CLI or Terraform examples are not present in this partial checkout yet, so CI could not generate findings.
+          REPORT
+          fi
+
+      - name: Upload architecture review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-review
+          path: architecture-review.md
+          if-no-files-found: error
