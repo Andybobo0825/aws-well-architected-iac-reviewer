@@ -7,3 +7,5 @@ __pycache__/
 *.tfstate
 *.tfstate.*
 architecture-review.md
+
+.DS_Store
